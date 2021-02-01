@@ -17,6 +17,7 @@ pub use self::xdr_nom::specification;
 
 use super::result_option;
 
+#[cfg(not(feature="derive_strum_enum_string"))]
 bitflags! {
     pub struct Derives: u32 {
         const COPY = 1 << 0;
@@ -26,6 +27,18 @@ bitflags! {
         const PARTIALEQ = 1 << 4;
     }
 }
+
+#[cfg(feature="derive_strum_enum_string")]
+    bitflags! {
+        pub struct Derives: u32 {
+            const COPY = 1 << 0;
+            const CLONE = 1 << 1;
+            const DEBUG = 1 << 2;
+            const EQ = 1 << 3;
+            const PARTIALEQ = 1 << 4;
+            const ENUM_STRING = 1 << 5;
+        }
+    }
 
 impl ToTokens for Derives {
     fn to_tokens(&self, toks: &mut TokenStream) {
@@ -54,6 +67,11 @@ impl ToTokens for Derives {
         }
         if self.contains(Derives::PARTIALEQ) {
             der.push("PartialEq")
+        }
+
+        #[cfg(feature="derive_strum_enum_string")]
+        if self.contains(Derives::ENUM_STRING) {
+            der.push("EnumString")
         }
 
         #[cfg(feature="derive_serde")] {
@@ -247,7 +265,8 @@ impl Type {
         // No derives unless we can prove we have some
         memo.insert(self.clone(), Derives::empty());
 
-        let set = match self {
+        #[allow(unused_mut)]
+        let mut set = match self {
             &Array(ref ty, ref len) => {
                 let ty = ty.as_ref();
                 let set = match ty {
@@ -263,7 +282,13 @@ impl Type {
                 let set = ty.derivable(symtab, Some(memo));
                 set & !Derives::COPY // no Copy, everything else OK
             }
-            &Enum(_) => Derives::EQ | Derives::PARTIALEQ | Derives::COPY | Derives::CLONE | Derives::DEBUG,
+            &Enum(_) => {
+                #[allow(unused_mut)]
+                let mut ders = Derives::EQ | Derives::PARTIALEQ | Derives::COPY | Derives::CLONE | Derives::DEBUG;
+                #[cfg(feature="derive_strum_enum_string")]
+                    ders.insert(Derives::ENUM_STRING);
+                ders
+            },
             &Option(ref ty) => ty.derivable(symtab, Some(memo)) & !Derives::COPY,
             &Struct(ref fields) => {
                 fields.iter().fold(Derives::all(), |a, f| {
@@ -296,6 +321,10 @@ impl Type {
             _ => Derives::all() & !Derives::COPY,
         };
 
+        #[cfg(feature="derive_strum_enum_string")]
+        if let Enum(_) = self {} else {
+            set.remove(Derives::ENUM_STRING);
+        }
         memo.insert(self.clone(), set);
         set
     }

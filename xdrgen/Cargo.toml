@@ -23,6 +23,7 @@ unstable = []
 derive_serde = ["serde"]
 omit_case_warnings = []
 derive_json_schema = ["schemars"]
+derive_strum_enum_string = ["strum", "strum_macros"]
 
 [dependencies]
 log = "0.3"
@@ -35,6 +36,8 @@ lazy_static = "1.4"
 bitflags = "1.2"
 serde = {version = "1.0", features = ["derive"], optional = true}
 schemars = {version = "0.8", optional = true}
+strum = {version = "0.19", optional = true}
+strum_macros = {version = "0.19", optional = true}
 
 [dependencies.xdr-codec]
 path = "../xdr-codec"

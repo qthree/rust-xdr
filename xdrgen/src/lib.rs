@@ -107,6 +107,9 @@ where
     #[cfg(feature="derive_json_schema")]
     imports.push_str("use schemars::JsonSchema;\n");
 
+    #[cfg(feature="derive_strum_enum_string")]
+    imports.push_str("use strum_macros::EnumString;\n");
+
     let _ = writeln!(
         output,
         r#"
