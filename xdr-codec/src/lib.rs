@@ -310,8 +310,10 @@ pub fn unpack_flex<In: Read, T: Unpack<In>>(
     if maxsz.map_or(false, |m| elems > m) {
         bail!(ErrorKind::InvalidLen(maxsz.unwrap()));
     }
-
-    let mut out = Vec::with_capacity(elems);
+    // TODO_THINK_ABOUT: One can cause allocation maximum exceeding in case
+    // of XDR protocol missmatch (different XDR-files or invalid input data).
+    // let mut out = Vec::with_capacity(elems);
+    let mut out = vec![];
 
     for _ in 0..elems {
         let (e, esz) = Unpack::unpack(input)?;
@@ -335,13 +337,14 @@ pub fn unpack_opaque_flex<In: Read>(
     input: &mut In,
     maxsz: Option<usize>,
 ) -> Result<(Vec<u8>, usize)> {
-    let (elems, mut sz) = Unpack::unpack(input)?;
+    let (elems, mut sz): (usize, _) = Unpack::unpack(input)?;
 
     if maxsz.map_or(false, |m| elems > m) {
         bail!(ErrorKind::InvalidLen(maxsz.unwrap()));
     }
-
-    let mut out = Vec::with_capacity(elems);
+    // TODO_THINK_ABOUT: same as unpack_flex
+    // let mut out = Vec::with_capacity(elems);
+    let mut out = vec![];
 
     sz += input.take(elems as u64).read_to_end(&mut out)?;
 
