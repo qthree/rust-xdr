@@ -31,9 +31,9 @@ fn main() {
                 std::process::exit(1);
             }
         };
-        generate(fname, BufReader::new(f), output)
+        generate(fname, BufReader::new(f), output, &[])
     } else {
-        generate("stdin", BufReader::new(stdin()), output)
+        generate("stdin", BufReader::new(stdin()), output, &[])
     };
 
     if let Err(e) = res {

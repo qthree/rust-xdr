@@ -6,7 +6,7 @@
 //! It is intended to be used with the "xdr-codec" crate, which provides the runtime library for
 //! encoding/decoding primitive types, strings, opaque data and arrays.
 
-#![recursion_limit="128"]
+#![recursion_limit = "128"]
 
 extern crate xdr_codec as xdr;
 
@@ -25,11 +25,11 @@ extern crate nom;
 #[macro_use]
 extern crate bitflags;
 
-use std::fs::File;
-use std::path::{Path, PathBuf};
-use std::io::{Read, Write};
-use std::fmt::Display;
 use std::env;
+use std::fmt::Display;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use std::result;
 
 use xdr::Result;
@@ -45,11 +45,26 @@ fn result_option<T, E>(resopt: result::Result<Option<T>, E>) -> Option<result::R
     }
 }
 
+pub fn exclude_definition_line(line: &str, exclude_defs: &[&str]) -> bool {
+    exclude_defs.iter().fold(false, |acc, v| {
+        acc || line.contains(&format!("const {}", v))
+            || line.contains(&format!("struct {}", v))
+            || line.contains(&format!("enum {}", v))
+            || line.contains(&format!("for {}", v))
+    })
+}
+
 /// Generate Rust code from an RFC4506 XDR specification
 ///
 /// `infile` is simply a string used in error messages; it may be empty. `input` is a read stream of
 /// the specification, and `output` is where the generated code is sent.
-pub fn generate<In, Out>(infile: &str, mut input: In, mut output: Out) -> Result<()>
+/// `exclude_defs` is list of not generated type definitions.
+pub fn generate<In, Out>(
+    infile: &str,
+    mut input: In,
+    mut output: Out,
+    exclude_defs: &[&str],
+) -> Result<()>
 where
     In: Read,
     Out: Write,
@@ -66,27 +81,34 @@ where
     let xdr = xdr;
 
     let res: Vec<_> = {
-        let consts = xdr.constants()
-            .filter_map(|(c, &(v, ref scope))| if scope.is_none() {
-                Some(spec::Const(c.clone(), v))
-            } else {
-                None
+        let consts = xdr
+            .constants()
+            .filter_map(|(c, &(v, ref scope))| {
+                if scope.is_none() {
+                    Some(spec::Const(c.clone(), v))
+                } else {
+                    None
+                }
             })
             .map(|c| c.define(&xdr));
 
-        let typespecs = xdr.typespecs()
+        let typespecs = xdr
+            .typespecs()
             .map(|(n, ty)| spec::Typespec(n.clone(), ty.clone()))
             .map(|c| c.define(&xdr));
 
-        let typesyns = xdr.typesyns()
+        let typesyns = xdr
+            .typesyns()
             .map(|(n, ty)| spec::Typesyn(n.clone(), ty.clone()))
             .map(|c| c.define(&xdr));
 
-        let packers = xdr.typespecs()
+        let packers = xdr
+            .typespecs()
             .map(|(n, ty)| spec::Typespec(n.clone(), ty.clone()))
             .filter_map(|c| result_option(c.pack(&xdr)));
 
-        let unpackers = xdr.typespecs()
+        let unpackers = xdr
+            .typespecs()
             .map(|(n, ty)| spec::Typespec(n.clone(), ty.clone()))
             .filter_map(|c| result_option(c.unpack(&xdr)));
 
@@ -111,7 +133,10 @@ where
     );
 
     for it in res {
-        let _ = writeln!(output, "{}\n", it.to_string());
+        let line = it.to_string();
+        if !exclude_definition_line(&line, exclude_defs) {
+            let _ = writeln!(output, "{}\n", line);
+        }
     }
 
     Ok(())
@@ -141,7 +166,7 @@ where
 ///
 /// If your specification uses types which are not within the specification, you can provide your
 /// own implementations of `Pack` and `Unpack` for them.
-pub fn compile<P>(infile: P) -> Result<()>
+pub fn compile<P>(infile: P, exclude_defs: &[&str]) -> Result<()>
 where
     P: AsRef<Path> + Display,
 {
@@ -164,5 +189,6 @@ where
         infile.as_ref().as_os_str().to_str().unwrap_or("<unknown>"),
         input,
         output,
+        exclude_defs,
     )
 }

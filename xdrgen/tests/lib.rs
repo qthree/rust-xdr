@@ -73,7 +73,7 @@ fn main() {{}}
 
     {
         let test = File::create(&testfile)?;
-        generate(name, Cursor::new(xdr_spec.as_bytes()), test)?;
+        generate(name, Cursor::new(xdr_spec.as_bytes()), test, &[])?;
     }
 
     let compile = {

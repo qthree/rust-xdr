@@ -110,7 +110,7 @@ fn inline_struct() {
     println!("spec {:?}", s);
     assert!(s.is_ok());
 
-    let g = generate("", Cursor::new(spec.as_bytes()), Vec::new());
+    let g = generate("", Cursor::new(spec.as_bytes()), Vec::new(), &[]);
     assert!(g.is_err());
 }
 
@@ -126,7 +126,7 @@ fn inline_union() {
     println!("spec {:?}", s);
     assert!(s.is_ok());
 
-    let g = generate("", Cursor::new(spec.as_bytes()), Vec::new());
+    let g = generate("", Cursor::new(spec.as_bytes()), Vec::new(), &[]);
     assert!(g.is_err());
 }
 
@@ -142,7 +142,7 @@ fn case_type() {
         println!("spec sp \"{}\" => {:?}", sp, s);
         assert!(s.is_ok());
 
-        let g = generate("", Cursor::new(sp.as_bytes()), Vec::new());
+        let g = generate("", Cursor::new(sp.as_bytes()), Vec::new(), &[]);
         assert!(g.is_ok());
     }
 }
@@ -159,7 +159,7 @@ fn case_type_mismatch() {
         println!("spec sp \"{}\" => {:?}", sp, s);
         assert!(s.is_ok());
 
-        let g = generate("", Cursor::new(sp.as_bytes()), Vec::new());
+        let g = generate("", Cursor::new(sp.as_bytes()), Vec::new(), &[]);
         assert!(g.is_err());
     }
 }
@@ -183,7 +183,7 @@ fn constants() {
         println!("spec sp \"{}\" => {:?}", sp, s);
         assert!(s.is_ok());
 
-        let g = generate("", Cursor::new(sp.as_bytes()), Vec::new());
+        let g = generate("", Cursor::new(sp.as_bytes()), Vec::new(), &[]);
         assert!(g.is_ok());
     }
 }
