@@ -48,9 +48,6 @@ impl ToTokens for Derives {
 
         let mut tokens = toks.to_string();
 
-        #[cfg(feature="omit_case_warnings")]
-        tokens.push_str("#[allow(non_snake_case, non_camel_case_types)]");
-
         let mut der = Vec::<&str>::new();
 
         if self.contains(Derives::COPY) {
