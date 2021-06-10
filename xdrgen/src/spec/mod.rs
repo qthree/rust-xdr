@@ -48,6 +48,9 @@ impl ToTokens for Derives {
 
         let mut tokens = toks.to_string();
 
+        #[cfg(feature="reprc")]
+        tokens.push_str("#[repr(C)]");
+
         let mut der = Vec::<&str>::new();
 
         if self.contains(Derives::COPY) {

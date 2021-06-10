@@ -1,6 +1,6 @@
 [package]
 name = "xdrgen"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Jeremy Fitzhardinge <jeremy@goop.org>"]
 license = "MIT/Apache-2.0"
 description = "XDR codec generator from specification. Designed for use with xdr-codec."
@@ -23,6 +23,7 @@ unstable = []
 derive_serde = ["serde"]
 derive_json_schema = ["schemars"]
 derive_strum_enum_string = ["strum", "strum_macros"]
+reprc = []
 
 [dependencies]
 log = "0.3"
