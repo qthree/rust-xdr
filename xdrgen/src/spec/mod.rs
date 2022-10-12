@@ -901,7 +901,7 @@ impl Emitpack for Typespec {
         use self::Type::*;
         use self::Decl::*;
 
-        let name = quote_ident(&self.0);
+        let self_name = quote_ident(&self.0);
         let ty = &self.1;
         let mut directive = quote!();
 
@@ -913,10 +913,10 @@ impl Emitpack for Typespec {
                         let tok = quote_ident(name);
                         if let Some((ref _val, ref scope)) = symtab.getconst(name) {
                             // let val = *val as i32;
-                            if let &Some(ref scope) = scope {
-                                let scope = quote_ident(scope);
+                            if let &Some(ref _scope) = scope {
+                                // let scope = quote_ident(scope);
                                 // Some(quote!(#val => #scope :: #tok,))
-                                Some(quote!(x if x == #scope :: #tok as i32 => #scope :: #tok,))
+                                Some(quote!(x if x == #self_name :: #tok as i32 => #self_name :: #tok,))
                             } else {
                                 // Some(quote!(#val => #tok,))
                                 Some(quote!(x if x == #tok as i32 => #tok,))
@@ -948,7 +948,7 @@ impl Emitpack for Typespec {
                     })
                     .collect();
 
-                quote!(#name { #(#decls)* })
+                quote!(#self_name { #(#decls)* })
             }
 
             &Union(ref sel, ref cases, ref defl) => {
@@ -964,11 +964,11 @@ impl Emitpack for Typespec {
 
                             let ret = match decl {
                                 //&Void => quote!(#disc => #name::#label,),
-                                &Void => quote!(x if x == (#disc as i32) => #name::#label,),
+                                &Void => quote!(x if x == (#disc as i32) => #self_name::#label,),
                                 &Named(_, ref ty) => {
                                     let unpack = ty.unpacker(symtab);
                                     //quote!(#disc => #name::#label({ let (v, fsz) = #unpack; sz += fsz; v }),)
-                                    quote!(x if x == (#disc as i32) => #name::#label({ let (v, fsz) = #unpack; sz += fsz; v }),)
+                                    quote!(x if x == (#disc as i32) => #self_name::#label({ let (v, fsz) = #unpack; sz += fsz; v }),)
                                 },
                             };
                             Ok(ret)
@@ -978,10 +978,10 @@ impl Emitpack for Typespec {
                 if let &Some(ref decl) = defl {
                     let decl = decl.as_ref();
                     let defl = match decl {
-                        &Void => quote!(_ => #name::default),
+                        &Void => quote!(_ => #self_name::default),
                         &Named(_, ref ty) => {
                             let unpack = ty.unpacker(symtab);
-                            quote!(_ => #name::default({
+                            quote!(_ => #self_name::default({
                                 let (v, csz) = #unpack;
                                 sz += csz;
                                 v
@@ -1007,7 +1007,7 @@ impl Emitpack for Typespec {
 
             &Flex(_, _) | &Array(_, _) => {
                 let unpk = ty.unpacker(symtab);
-                quote!({ let (v, usz) = #unpk; sz = usz; #name(v) })
+                quote!({ let (v, usz) = #unpk; sz = usz; #self_name(v) })
             }
 
             &Ident(_, _) => return Ok(None),
@@ -1017,9 +1017,9 @@ impl Emitpack for Typespec {
         };
 
         Ok(Some(quote! {
-            impl<In: xdr_codec::Read> xdr_codec::Unpack<In> for #name {
+            impl<In: xdr_codec::Read> xdr_codec::Unpack<In> for #self_name {
                 #directive
-                    fn unpack(input: &mut In) -> xdr_codec::Result<(#name, usize)> {
+                    fn unpack(input: &mut In) -> xdr_codec::Result<(#self_name, usize)> {
                         #[allow(unused_assignments)]
                         let mut sz = 0;
                         Ok((#body, sz))
